@@ -1,0 +1,51 @@
+This file contains message digests of all files listed in MANIFEST,
+signed via the Module::Signature module, version 0.55.
+
+To verify the content in this distribution, first make sure you have
+Module::Signature installed, then type:
+
+    % cpansign -v
+
+It will check each file's integrity, as well as the signature's
+validity.  If "==> Signature verified OK! <==" is not displayed,
+the distribution may already have been compromised, and you should
+not run its Makefile.PL or Build.PL.
+
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+SHA1 e329af17d568b8e06983b602ddb6cd07ab8246d8 .cvsignore
+SHA1 4ba4ed3826f8a7d792f135736383b78c85415216 Build.PL
+SHA1 f1f54ac6fbcf60c0ff4d075f4bd027407ae1210a Changes
+SHA1 18161da6b60b887ecb36200280312e26fe8d16cc MANIFEST
+SHA1 592c565cc4ca2914b9bcc38151b93e94cf3dbb9c META.yml
+SHA1 4e353ebf723f509d483d085fce94058a68f71b46 Makefile.PL
+SHA1 87ef45d43139d2e64f814f168738c38777f7f662 README
+SHA1 d78c2502045dc47e59800d9cdcfd3af02839f001 lib/Sub/.cvsignore
+SHA1 0a2ac3f2ba61a921637aa5ad9193f1712954afe1 lib/Sub/Filter.pm
+SHA1 b49b444a22b4ef3ffdd89dd6275ecf59f082d2c4 lib/Sub/Filter.xs
+SHA1 0e141eecf3ca4903ef38d9413b5403a9ddb0392f t/pod_cvg.t
+SHA1 74a957cd8b93f25672ecc6aa578a671d084dd343 t/pod_syn.t
+SHA1 3758bba74d80addc719cbe4de1bd24cb22628f4d t/ret_array.t
+SHA1 0486e293f25e9fc7078fc6af83ba1d77e1ed70c0 t/ret_attr.t
+SHA1 0b21a6130df4f7ae1fffd5a12d62a4d3e2a17c69 t/ret_context.t
+SHA1 f48be3687bf89d762fbd3a2631a45e42062f9f44 t/ret_evalreturn.t
+SHA1 6e6ac1af8bdb066dc693dabac9d4514a21c6250e t/ret_except.t
+SHA1 50ade518663344c9fcc349898ce09393c14f517f t/ret_scalar.t
+SHA1 1ae20163a061dce11997de27158da185797040af t/ret_scalar_0.t
+SHA1 2205b12f50e8a886ba4b87c4b0e371ded90f618e t/ret_scalar_0f.t
+SHA1 1a3be9d200dc6261c502a550f95c2a3a8d14ba47 t/ret_scalar_2.t
+SHA1 d8bb40413ab39b73c6459bc0837f9c89d1ccfc05 t/ret_scalar_2f.t
+SHA1 94f00a4e030c717e24cc0d5d55783ec864a19a7e t/ret_slots.t
+SHA1 287f9b4a0ac6d9ab27335ae56e7b2c18f05fb657 t/ret_undef.t
+SHA1 223fedd0134f379c83fd179dfff9d5ac1965c5a5 t/ret_void.t
+SHA1 1ffe9b3ecd2a6485ad766abc0657e220f8752a89 t/ret_void_2.t
+SHA1 701b39772de63a76e0f7274beb9ec343d687b002 t/ret_void_2f.t
+SHA1 80af1f40b1054da5c48fe7b3d22f1796cd24d3d8 typemap
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.9 (GNU/Linux)
+
+iEYEARECAAYFAkqYWrMACgkQOV9mt2VyAVFIjQCeJ2/cOuu6dk5MUAIBnUIh/YDg
+6wUAnjLqylsMQV2fkbL5fsSI0vvODHRI
+=dZk/
+-----END PGP SIGNATURE-----
