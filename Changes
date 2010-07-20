@@ -1,3 +1,26 @@
+version 0.001; 2010-07-20
+
+  * bugfix: in XS, check SvOBJECT before looking at SvSTASH, because
+    the latter isn't guaranteed to be meaningful otherwise
+
+  * bugfix: require bugfixed version of Sub::Mutate (for SvSTASH safety)
+
+  * bugfix: require bugfixed version of Attribute::Lexical (for
+    passing package through to required code in pure-Perl version of
+    Lexical::SealRequireHints)
+
+  * port to Perl 5.13.3: use CvGV_set()
+
+  * in XS, use PERL_NO_GET_CONTEXT for efficiency
+
+  * check for required Perl version at runtime
+
+  * in Build.PL, explicitly declare configure-time requirements
+
+  * remove bogus "exit 0" from Build.PL
+
+  * add MYMETA.yml to .cvsignore
+
 version 0.000; 2009-08-28
 
   * initial released version

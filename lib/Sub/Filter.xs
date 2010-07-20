@@ -1,3 +1,4 @@
+#define PERL_NO_GET_CONTEXT 1
 #include "EXTERN.h"
 #include "perl.h"
 #include "XSUB.h"
@@ -28,8 +29,13 @@
 # define CVf_BUILTIN_ATTRS (CVf_METHOD|CVf_LOCKED|CVf_LVALUE)
 #endif /* !CVf_BUILTIN_ATTRS */
 
+#ifndef CvGV_set
+# define CvGV_set(cv, val) (CvGV(cv) = val)
+#endif /*!CvGV_set */
+
 #ifndef newSV_type
-static SV *newSV_type(svtype type)
+# define newSV_type(type) THX_newSV_type(aTHX_ type)
+static SV *THX_newSV_type(pTHX_ svtype type)
 {
 	SV *sv = newSV(0);
 	SvUPGRADE(sv, type);
@@ -37,7 +43,8 @@ static SV *newSV_type(svtype type)
 }
 #endif /* !newSV_type */
 
-static void canonise_retvalues(I32 gimme)
+#define canonise_retvalues(gimme) THX_canonise_retvalues(aTHX_ gimme)
+static void THX_canonise_retvalues(pTHX_ I32 gimme)
 {
 	dSP; dMARK;
 	PUSHMARK(MARK);
@@ -56,7 +63,8 @@ static void canonise_retvalues(I32 gimme)
 	}
 }
 
-static AV *new_minimal_padlist(void)
+#define new_minimal_padlist() THX_new_minimal_padlist(aTHX)
+static AV *THX_new_minimal_padlist(pTHX)
 {
 	AV *padlist, *pad;
 	pad = newAV();
@@ -83,7 +91,8 @@ static void xsfunc_runfilter(pTHX_ CV *wrappersub)
 	call_sv((SV*)filtersub, gimme);
 }
 
-static void swap_cvs(CV *a, CV *b)
+#define swap_cvs(a, b) THX_swap_cvs(aTHX_ a, b)
+static void THX_swap_cvs(pTHX_ CV *a, CV *b)
 {
 	CV x = *a, y = *b;
 	SvREFCNT((SV*)&x) = SvREFCNT((SV*)b);
@@ -91,7 +100,9 @@ static void swap_cvs(CV *a, CV *b)
 	*b = x; *a = y;
 }
 
-static void apply_retfilter_to_xsub(CV *target, CV *filter)
+#define apply_retfilter_to_xsub(target, filter) \
+	THX_apply_retfilter_to_xsub(aTHX_ target, filter)
+static void THX_apply_retfilter_to_xsub(pTHX_ CV *target, CV *filter)
 {
 	CV *wrapper = (CV*)newSV_type(SVt_PVCV);
 	AV *padlist = CvPADLIST(wrapper) = new_minimal_padlist();
@@ -99,13 +110,14 @@ static void apply_retfilter_to_xsub(CV *target, CV *filter)
 	av_store(padlist, 3, SvREFCNT_inc((SV*)filter));
 	if(SvPOK(target))
 		sv_setpvn((SV*)wrapper, SvPVX(target), SvCUR(target));
-	if(SvSTASH(target))
-		SvSTASH_set(wrapper, (HV*)SvREFCNT_inc((SV*)SvSTASH(target)));
-	if(SvOBJECT(target))
+	if(SvOBJECT(target)) {
+		HV *st = SvSTASH(target);
 		SvOBJECT_on(wrapper);
+		if(st) SvSTASH_set(wrapper, (HV*)SvREFCNT_inc((SV*)st));
+	}
 	CvFILE(wrapper) = CvFILE(target);
 	CvSTASH(wrapper) = CvSTASH(target);
-	CvGV(wrapper) = CvGV(target);
+	CvGV_set(wrapper, CvGV(target));
 	CvFLAGS(wrapper) |=
 		CvFLAGS(target) & (CVf_BUILTIN_ATTRS|CVf_ANON|CVf_NODEBUG);
 	CvISXSUB_on(wrapper);
@@ -113,7 +125,8 @@ static void apply_retfilter_to_xsub(CV *target, CV *filter)
 	swap_cvs(target, wrapper);
 }
 
-static I32 sub_gimme(void)
+#define sub_gimme() THX_sub_gimme(aTHX)
+static I32 THX_sub_gimme(pTHX)
 {
 	int cxix = cxstack_ix;
 	PERL_CONTEXT *cxs = cxstack;
@@ -127,7 +140,8 @@ static I32 sub_gimme(void)
 	}
 }
 
-static I32 current_gimme(void)
+#define current_gimme() THX_current_gimme(aTHX)
+static I32 THX_current_gimme(pTHX)
 {
 	return cxstack[cxstack_ix].blk_gimme;
 }
@@ -158,7 +172,8 @@ static OP *pp_blockmark(pTHX)
 	return PL_op->op_next;
 }
 
-static void link_op(OP *parent, OP *child)
+#define link_op(parent, child) THX_link_op(aTHX_ parent, child)
+static void THX_link_op(pTHX_ OP *parent, OP *child)
 {
 	child->op_sibling = parent->op_flags & OPf_KIDS ?
 				cUNOPx(parent)->op_first : NULL;
@@ -166,7 +181,9 @@ static void link_op(OP *parent, OP *child)
 	parent->op_flags |= OPf_KIDS;
 }
 
-static void apply_retfilter_to_psub_gen_calls(OP *op, CV *filter,
+#define apply_retfilter_to_psub_gen_calls(op, filter, root, opmap) \
+	THX_apply_retfilter_to_psub_gen_calls(aTHX_ op, filter, root, opmap)
+static void THX_apply_retfilter_to_psub_gen_calls(pTHX_ OP *op, CV *filter,
 	OP *root, PTR_TBL_t *opmap)
 {
 	switch(op->op_type) {
@@ -221,7 +238,10 @@ static void apply_retfilter_to_psub_gen_calls(OP *op, CV *filter,
 	}
 }
 
-static void apply_retfilter_to_psub_relink_ops(OP *op, PTR_TBL_t *opmap)
+#define apply_retfilter_to_psub_relink_ops(op, opmap) \
+	THX_apply_retfilter_to_psub_relink_ops(aTHX_ op, opmap)
+static void THX_apply_retfilter_to_psub_relink_ops(pTHX_
+	OP *op, PTR_TBL_t *opmap)
 {
 	if(ptr_table_fetch(opmap, op) != op) {
 		OP *newop;
@@ -261,7 +281,9 @@ static void apply_retfilter_to_psub_relink_ops(OP *op, PTR_TBL_t *opmap)
 	}
 }
 
-static void apply_retfilter_to_psub(CV *target, CV *filter)
+#define apply_retfilter_to_psub(target, filter) \
+	THX_apply_retfilter_to_psub(aTHX_ target, filter)
+static void THX_apply_retfilter_to_psub(pTHX_ CV *target, CV *filter)
 {
 	OP *root, *blockmarkop;
 	PTR_TBL_t *opmap;

@@ -1,3 +1,4 @@
+{ use 5.006; }
 use warnings;
 use strict;
 
@@ -5,21 +6,24 @@ use Module::Build;
 
 Module::Build->new(
 	module_name => "Sub::Filter",
-	dist_version => "0.000",
 	license => "perl",
+	configure_requires => {
+		"Module::Build" => 0,
+		"perl" => "5.006001",
+	},
 	build_requires => {
 		"ExtUtils::CBuilder" => "0.15",
 		"Module::Build" => 0,
-		"Sub::Mutate" => 0,
+		"Sub::Mutate" => "0.001",
 		"Test::More" => 0,
 		"perl" => "5.006001",
 		"strict" => 0,
 		"warnings" => 0,
 	},
 	requires => {
-		"Attribute::Lexical" => 0,
+		"Attribute::Lexical" => "0.002",
 		"Carp" => 0,
-		"Sub::Mutate" => 0,
+		"Sub::Mutate" => "0.001",
 		"XSLoader" => 0,
 		"perl" => "5.006001",
 		"strict" => 0,
@@ -31,4 +35,4 @@ Module::Build->new(
 	sign => 1,
 )->create_build_script;
 
-exit 0;
+1;
