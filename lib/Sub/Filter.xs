@@ -22,7 +22,7 @@
 #endif /* !CvISXSUB */
 
 #ifndef CvISXSUB_on
-# define CvISXSUB_on(cv) ((cv), 0)
+# define CvISXSUB_on(cv) ((void) (cv))
 #endif /* !CvISXSUB_on */
 
 #ifndef CVf_BUILTIN_ATTRS
@@ -38,10 +38,28 @@
 static SV *THX_newSV_type(pTHX_ svtype type)
 {
 	SV *sv = newSV(0);
-	SvUPGRADE(sv, type);
+	(void) SvUPGRADE(sv, type);
 	return sv;
 }
 #endif /* !newSV_type */
+
+#if PERL_VERSION_GE(5,9,0)
+# define case_OP_DOR_ case OP_DOR:
+# define case_OP_DORASSIGN_ case OP_DORASSIGN:
+#else /* <5.9.0 */
+# define case_OP_DOR_
+# define case_OP_DORASSIGN_
+#endif /* <5.9.0 */
+#if PERL_VERSION_GE(5,9,3)
+# define case_OP_ENTERWHEN_ case OP_ENTERWHEN:
+#else /* <5.9.3 */
+# define case_OP_ENTERWHEN_
+#endif /* <5.9.3 */
+#if PERL_VERSION_GE(5,10,0)
+# define case_OP_ONCE_ case OP_ONCE:
+#else /* <5.10.0 */
+# define case_OP_ONCE_
+#endif /* <5.10.0 */
 
 #define canonise_retvalues(gimme) THX_canonise_retvalues(aTHX_ gimme)
 static void THX_canonise_retvalues(pTHX_ I32 gimme)
@@ -98,6 +116,13 @@ static void THX_swap_cvs(pTHX_ CV *a, CV *b)
 	SvREFCNT((SV*)&x) = SvREFCNT((SV*)b);
 	SvREFCNT((SV*)&y) = SvREFCNT((SV*)a);
 	*b = x; *a = y;
+#ifdef CVf_CVGV_RC
+	{
+		U32 xf = (CvFLAGS(a) ^ CvFLAGS(b)) & CVf_CVGV_RC;
+		CvFLAGS(a) ^= xf;
+		CvFLAGS(b) ^= xf;
+	}
+#endif /* !CVf_CVGV_RC */
 }
 
 #define apply_retfilter_to_xsub(target, filter) \
@@ -114,6 +139,7 @@ static void THX_apply_retfilter_to_xsub(pTHX_ CV *target, CV *filter)
 		HV *st = SvSTASH(target);
 		SvOBJECT_on(wrapper);
 		if(st) SvSTASH_set(wrapper, (HV*)SvREFCNT_inc((SV*)st));
+		PL_sv_objcount++;
 	}
 	CvFILE(wrapper) = CvFILE(target);
 	CvSTASH(wrapper) = CvSTASH(target);
@@ -181,6 +207,20 @@ static void THX_link_op(pTHX_ OP *parent, OP *child)
 	parent->op_flags |= OPf_KIDS;
 }
 
+#define gen_filter_call(f) THX_gen_filter_call(aTHX_ f)
+static OP *THX_gen_filter_call(pTHX_ CV *filter)
+{
+	OP *cvop, *callop;
+	cvop = newSVOP(OP_CONST, 0, SvREFCNT_inc((SV*)filter));
+	NewOpSz(0, callop, sizeof(UNOP));
+	callop->op_type = OP_ENTERSUB;
+	callop->op_ppaddr = PL_ppaddr[OP_ENTERSUB];
+	cUNOPx(callop)->op_first = cvop;
+	callop->op_flags = OPf_STACKED | OPf_KIDS;
+	cvop->op_next = callop;
+	return callop;
+}
+
 #define apply_retfilter_to_psub_gen_calls(op, filter, root, opmap) \
 	THX_apply_retfilter_to_psub_gen_calls(aTHX_ op, filter, root, opmap)
 static void THX_apply_retfilter_to_psub_gen_calls(pTHX_ OP *op, CV *filter,
@@ -189,15 +229,13 @@ static void THX_apply_retfilter_to_psub_gen_calls(pTHX_ OP *op, CV *filter,
 	switch(op->op_type) {
 		case OP_LEAVESUB: case OP_LEAVESUBLV: {
 			OP *canoniseop = newOP(OP_PUSHMARK, 0);
-			OP *cvop = newSVOP(OP_CONST, 0,
-						SvREFCNT_inc((SV*)filter));
-			OP *callop = newUNOP(OP_ENTERSUB, OPf_STACKED, cvop);
+			OP *callop = gen_filter_call(filter);
+			OP *cvop = cUNOPx(callop)->op_first;
 			canoniseop->op_ppaddr =
 				pp_canonise_retvalues_for_block;
 			link_op(callop, canoniseop);
 			link_op(op, callop);
 			canoniseop->op_next = cvop;
-			cvop->op_next = callop;
 			callop->op_next = op;
 			ptr_table_store(opmap, op, canoniseop);
 			ptr_table_store(opmap, callop, callop);
@@ -205,9 +243,8 @@ static void THX_apply_retfilter_to_psub_gen_calls(pTHX_ OP *op, CV *filter,
 		case OP_RETURN: {
 			OP *copymarkop = newOP(OP_PUSHMARK, 0);
 			OP *canoniseop = newOP(OP_PUSHMARK, 0);
-			OP *cvop = newSVOP(OP_CONST, 0,
-						SvREFCNT_inc((SV*)filter));
-			OP *callop = newUNOP(OP_ENTERSUB, OPf_STACKED, cvop);
+			OP *callop = gen_filter_call(filter);
+			OP *cvop = cUNOPx(callop)->op_first;
 			copymarkop->op_ppaddr = pp_copymark;
 			canoniseop->op_ppaddr = pp_canonise_retvalues_for_sub;
 			link_op(callop, canoniseop);
@@ -215,7 +252,6 @@ static void THX_apply_retfilter_to_psub_gen_calls(pTHX_ OP *op, CV *filter,
 			link_op(op, callop);
 			copymarkop->op_next = canoniseop;
 			canoniseop->op_next = cvop;
-			cvop->op_next = callop;
 			callop->op_next = op;
 			ptr_table_store(opmap, op, copymarkop);
 			ptr_table_store(opmap, callop, callop);
@@ -251,18 +287,12 @@ static void THX_apply_retfilter_to_psub_relink_ops(pTHX_
 			case OP_AND:
 			case OP_ANDASSIGN:
 			case OP_COND_EXPR:
-#if PERL_VERSION_GE(5,9,0)
-			case OP_DOR:
-			case OP_DORASSIGN:
-#endif /* 5.9.0+ */
-#if PERL_VERSION_GE(5,9,3)
-			case OP_ENTERWHEN:
-#endif /* 5.9.3+ */
+			case_OP_DOR_
+			case_OP_DORASSIGN_
+			case_OP_ENTERWHEN_
 			case OP_GREPWHILE:
 			case OP_MAPWHILE:
-#if PERL_VERSION_GE(5,10,0)
-			case OP_ONCE:
-#endif /* 5.10.0+ */
+			case_OP_ONCE_
 			case OP_OR:
 			case OP_ORASSIGN:
 			case OP_RANGE:
@@ -313,6 +343,8 @@ static void THX_apply_retfilter_to_psub(pTHX_ CV *target, CV *filter)
 
 MODULE = Sub::Filter PACKAGE = Sub::Filter
 
+PROTOTYPES: DISABLE
+
 void
 mutate_sub_filter_return(CV *target, CV *filter)
 PROTOTYPE: $$
@@ -327,6 +359,7 @@ CODE:
 
 void
 _test_xs(...)
+PROTOTYPE: @
 PREINIT:
 	AV *av;
 	I32 i, len;

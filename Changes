@@ -1,3 +1,32 @@
+version 0.002; 2010-10-24
+
+  * bugfix: when applying a filter to a Perl sub, avoid letting the core
+    munge entersub ops, which was causing allocation of target slots in
+    the wrong pad
+
+  * bugfix: on Perl 5.13.3+, correctly manage the CVf_CVGV_RC flag when
+    applying a filter to an xsub
+
+  * bugfix: correctly maintain PL_sv_objcount when applying a filter to
+    a blessed xsub
+
+  * bugfix: require bugfixed version of Sub::Mutate (for PL_sv_objcount
+    correctness)
+
+  * in XS, factor out Perl version variations into macros for greater
+    readability
+
+  * give the internal function _test_xs() a prototype
+
+  * in XS, declare "PROTOTYPES: DISABLE" to prevent automatic generation
+    of unintended prototypes
+
+  * jump through hoops to avoid compiler warnings
+
+  * use full stricture in test suite
+
+  * in Build.PL, complete declaration of configure-time requirements
+
 version 0.001; 2010-07-20
 
   * bugfix: in XS, check SvOBJECT before looking at SvSTASH, because

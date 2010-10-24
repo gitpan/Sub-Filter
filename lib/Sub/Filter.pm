@@ -72,13 +72,13 @@ another filter to.
 
 package Sub::Filter;
 
-{ use 5.006001; }
+{ use 5.008001; }
 use warnings;
 use strict;
 
 use Carp qw(croak);
 
-our $VERSION = "0.001";
+our $VERSION = "0.002";
 
 my %SUB_EXPORT_OK = map { $_ => undef } qw(mutate_sub_filter_return);
 
@@ -92,7 +92,7 @@ sub import {
 			require Attribute::Lexical;
 			Attribute::Lexical->VERSION(0.002);
 			require Sub::Mutate;
-			Sub::Mutate->VERSION(0.001);
+			Sub::Mutate->VERSION(0.003);
 			Attribute::Lexical->import("CODE:filter_return" =>
 				\&_handle_attr_filter_return);
 		} else {

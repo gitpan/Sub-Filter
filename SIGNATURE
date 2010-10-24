@@ -1,5 +1,5 @@
 This file contains message digests of all files listed in MANIFEST,
-signed via the Module::Signature module, version 0.64.
+signed via the Module::Signature module, version 0.66.
 
 To verify the content in this distribution, first make sure you have
 Module::Signature installed, then type:
@@ -15,17 +15,17 @@ not run its Makefile.PL or Build.PL.
 Hash: SHA1
 
 SHA1 6e5c6f8dca5ece637dd31d98ba7a1d69642d7495 .cvsignore
-SHA1 e2ecf5fc44c3b284805b2942c5b32d81dadd5e95 Build.PL
-SHA1 809e23ab3f1fcfae58541f8195cbe4753553e8c1 Changes
+SHA1 990cef4ad0c599d09bb6ce08fa4f2776b68c0ec3 Build.PL
+SHA1 bb30e68a410a7b68da231b0165575bf07c093759 Changes
 SHA1 18161da6b60b887ecb36200280312e26fe8d16cc MANIFEST
-SHA1 76573fa1a8ee6af1382f849dc211e04268733e09 META.yml
-SHA1 0e6591428591f8000687b728580dc1b279ddb008 Makefile.PL
+SHA1 8b9f036179a1ac575004757b47a4ba22edc7ffdb META.yml
+SHA1 cbe646e9eec8e4cf1175c7fd8cb87a31ad241a82 Makefile.PL
 SHA1 92a81ae3ea3c68f644f2a21a64b1c7170f8b98fa README
 SHA1 d78c2502045dc47e59800d9cdcfd3af02839f001 lib/Sub/.cvsignore
-SHA1 d467a82723553b05c486ad20d99f95a8a4a4e613 lib/Sub/Filter.pm
-SHA1 8c5593660225e06137aba34afb7f37c4db0ba3a8 lib/Sub/Filter.xs
-SHA1 0e141eecf3ca4903ef38d9413b5403a9ddb0392f t/pod_cvg.t
-SHA1 74a957cd8b93f25672ecc6aa578a671d084dd343 t/pod_syn.t
+SHA1 59acade6e940753fa941c8ce812d33dbaff3cee4 lib/Sub/Filter.pm
+SHA1 520104a1ac0b20b6b38835a952b8ad342faa669f lib/Sub/Filter.xs
+SHA1 904d9a4f76525e2303e4b0c168c68230f223c8de t/pod_cvg.t
+SHA1 65c75abdef6f01a5d1588a307f2ddfe2333dc961 t/pod_syn.t
 SHA1 3758bba74d80addc719cbe4de1bd24cb22628f4d t/ret_array.t
 SHA1 0486e293f25e9fc7078fc6af83ba1d77e1ed70c0 t/ret_attr.t
 SHA1 0b21a6130df4f7ae1fffd5a12d62a4d3e2a17c69 t/ret_context.t
@@ -45,7 +45,7 @@ SHA1 80af1f40b1054da5c48fe7b3d22f1796cd24d3d8 typemap
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.9 (GNU/Linux)
 
-iEYEARECAAYFAkxGG1EACgkQOV9mt2VyAVGNvgCeMksn7vqF0STv0RHb7UzprxQD
-S6oAn1ULcGLBk1N1spGzDs6AeBzAIw+N
-=es6w
+iEYEARECAAYFAkzDh9MACgkQOV9mt2VyAVFBmACeMR9In2QPAugyImsMaFKBAlBP
+EnYAnAmH+bDybeCou9IaGkEBhd1b4GoA
+=r1FG
 -----END PGP SIGNATURE-----
