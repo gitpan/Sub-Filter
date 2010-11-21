@@ -26,7 +26,7 @@ name: Sub-Filter
 provides:
   Sub::Filter:
     file: lib/Sub/Filter.pm
-    version: 0.002
+    version: 0.003
 requires:
   Attribute::Lexical: 0.002
   Carp: 0
@@ -37,4 +37,4 @@ requires:
   warnings: 0
 resources:
   license: http://dev.perl.org/licenses/
-version: 0.002
+version: 0.003

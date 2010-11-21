@@ -1,3 +1,12 @@
+version 0.003; 2010-11-21
+
+  * bugfix: on Perl 5.13.3 and above, maintain CvSTASH backrefences
+    correctly
+
+  * include a reserve implementation of the ptr_table data structure,
+    because prior to Perls 5.9.5 and 5.8.9 it was not made available by
+    the core if Perl is not configured for ithreads
+
 version 0.002; 2010-10-24
 
   * bugfix: when applying a filter to a Perl sub, avoid letting the core

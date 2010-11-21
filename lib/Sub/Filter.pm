@@ -78,7 +78,7 @@ use strict;
 
 use Carp qw(croak);
 
-our $VERSION = "0.002";
+our $VERSION = "0.003";
 
 my %SUB_EXPORT_OK = map { $_ => undef } qw(mutate_sub_filter_return);
 

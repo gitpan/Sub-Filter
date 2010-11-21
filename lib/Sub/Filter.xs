@@ -33,6 +33,28 @@
 # define CvGV_set(cv, val) (CvGV(cv) = val)
 #endif /*!CvGV_set */
 
+#ifndef CvSTASH_set
+# if PERL_VERSION_GE(5,13,3)
+#  ifndef sv_del_backref
+#   define sv_del_backref(t,s) Perl_sv_del_backref(aTHX_ t,s)
+#  endif /* !sv_del_backref */
+#  ifndef sv_add_backref
+#   define sv_add_backref(t,s) Perl_sv_add_backref(aTHX_ t,s)
+PERL_CALLCONV void Perl_sv_add_backref(pTHX_ SV *t, SV *s);
+#  endif /* !sv_add_backref */
+#  define CvSTASH_set(cv, newst) THX_cvstash_set(aTHX_ cv, newst)
+static void THX_cvstash_set(pTHX_ CV *cv, HV *newst)
+{
+	HV *oldst = CvSTASH(cv);
+	if(oldst) sv_del_backref((SV*)oldst, (SV*)cv);
+	CvSTASH(cv) = newst;
+	if(newst) sv_add_backref((SV*)newst, (SV*)cv);
+}
+# else /* <5.13.3 */
+#  define CvSTASH_set(cv, newst) (CvSTASH(cv) = (newst))
+# endif /* <5.13.3 */
+#endif /* !CvSTASH_set */
+
 #ifndef newSV_type
 # define newSV_type(type) THX_newSV_type(aTHX_ type)
 static SV *THX_newSV_type(pTHX_ svtype type)
@@ -42,6 +64,64 @@ static SV *THX_newSV_type(pTHX_ svtype type)
 	return sv;
 }
 #endif /* !newSV_type */
+
+#ifndef Newx
+# define Newx(v,n,t) New(0,v,n,t)
+#endif /* !Newx */
+
+#ifndef ptr_table_new
+
+struct q_ptr_tbl_ent {
+	struct q_ptr_tbl_ent *next;
+	void *from, *to;
+};
+
+# undef PTR_TBL_t
+# define PTR_TBL_t struct q_ptr_tbl_ent *
+
+# define ptr_table_new() THX_ptr_table_new(aTHX)
+static PTR_TBL_t *THX_ptr_table_new(pTHX)
+{
+	PTR_TBL_t *tbl;
+	Newx(tbl, 1, PTR_TBL_t);
+	*tbl = NULL;
+	return tbl;
+}
+
+# define ptr_table_free(tbl) THX_ptr_table_free(aTHX_ tbl)
+static void THX_ptr_table_free(pTHX_ PTR_TBL_t *tbl)
+{
+	struct q_ptr_tbl_ent *ent = *tbl;
+	Safefree(tbl);
+	while(ent) {
+		struct q_ptr_tbl_ent *nent = ent->next;
+		Safefree(ent);
+		ent = nent;
+	}
+}
+
+# define ptr_table_store(tbl, from, to) THX_ptr_table_store(aTHX_ tbl, from, to)
+static void THX_ptr_table_store(pTHX_ PTR_TBL_t *tbl, void *from, void *to)
+{
+	struct q_ptr_tbl_ent *ent;
+	Newx(ent, 1, struct q_ptr_tbl_ent);
+	ent->next = *tbl;
+	ent->from = from;
+	ent->to = to;
+	*tbl = ent;
+}
+
+# define ptr_table_fetch(tbl, from) THX_ptr_table_fetch(aTHX_ tbl, from)
+static void *THX_ptr_table_fetch(pTHX_ PTR_TBL_t *tbl, void *from)
+{
+	struct q_ptr_tbl_ent *ent;
+	for(ent = *tbl; ent; ent = ent->next) {
+		if(ent->from == from) return ent->to;
+	}
+	return NULL;
+}
+
+#endif /* !ptr_table_new */
 
 #if PERL_VERSION_GE(5,9,0)
 # define case_OP_DOR_ case OP_DOR:
@@ -142,7 +222,7 @@ static void THX_apply_retfilter_to_xsub(pTHX_ CV *target, CV *filter)
 		PL_sv_objcount++;
 	}
 	CvFILE(wrapper) = CvFILE(target);
-	CvSTASH(wrapper) = CvSTASH(target);
+	CvSTASH_set(wrapper, CvSTASH(target));
 	CvGV_set(wrapper, CvGV(target));
 	CvFLAGS(wrapper) |=
 		CvFLAGS(target) & (CVf_BUILTIN_ATTRS|CVf_ANON|CVf_NODEBUG);
