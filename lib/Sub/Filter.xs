@@ -55,6 +55,16 @@ static void THX_cvstash_set(pTHX_ CV *cv, HV *newst)
 # endif /* <5.13.3 */
 #endif /* !CvSTASH_set */
 
+#ifdef PadlistARRAY
+# define QUSE_PADLIST_STRUCT 1
+#else /* !PadlistARRAY */
+# define QUSE_PADLIST_STRUCT 0
+typedef AV PADNAMELIST;
+# define PadlistARRAY(pl) ((PAD**)AvARRAY(pl))
+# define PadlistNAMES(pl) (PadlistARRAY(pl)[0])
+# define PadlistMAX(pl) AvFILLp(pl)
+#endif /* !PadlistARRAY */
+
 #ifndef newSV_type
 # define newSV_type(type) THX_newSV_type(aTHX_ type)
 static SV *THX_newSV_type(pTHX_ svtype type)
@@ -123,13 +133,13 @@ static void *THX_ptr_table_fetch(pTHX_ PTR_TBL_t *tbl, void *from)
 
 #endif /* !ptr_table_new */
 
-#if PERL_VERSION_GE(5,9,0)
+#if defined(pp_dor) || PERL_VERSION_GE(5,9,0)
 # define case_OP_DOR_ case OP_DOR:
 # define case_OP_DORASSIGN_ case OP_DORASSIGN:
-#else /* <5.9.0 */
+#else /* !pp_dor && <5.9.0 */
 # define case_OP_DOR_
 # define case_OP_DORASSIGN_
-#endif /* <5.9.0 */
+#endif /* !pp_dor && <5.9.0 */
 #if PERL_VERSION_GE(5,9,3)
 # define case_OP_ENTERWHEN_ case OP_ENTERWHEN:
 #else /* <5.9.3 */
@@ -161,26 +171,40 @@ static void THX_canonise_retvalues(pTHX_ I32 gimme)
 	}
 }
 
-#define new_minimal_padlist() THX_new_minimal_padlist(aTHX)
-static AV *THX_new_minimal_padlist(pTHX)
+#define new_padlist_for_filter() THX_new_padlist_for_filter(aTHX)
+static PADLIST *THX_new_padlist_for_filter(pTHX)
 {
-	AV *padlist, *pad;
+	PADLIST *padlist;
+	PAD *pad;
+	PADNAMELIST *padname;
 	pad = newAV();
 	av_store(pad, 0, &PL_sv_undef);
+#if QUSE_PADLIST_STRUCT
+	Newxz(padlist, 1, PADLIST);
+	Newx(PadlistARRAY(padlist), 4, PAD *);
+#else /* !QUSE_PADLIST_STRUCT */
 	padlist = newAV();
+# if !PERL_VERSION_GE(5,15,3)
 	AvREAL_off(padlist);
-	av_extend(padlist, 1);
-	av_store(padlist, 0, (SV*)newAV());
-	av_store(padlist, 1, (SV*)pad);
+# endif /* <5.15.3 */
+	av_extend(padlist, 3);
+#endif /* !QUSE_PADLIST_STRUCT */
+	padname = newAV();
+#ifdef AvPAD_NAMELIST_on
+	AvPAD_NAMELIST_on(padname);
+#endif /* AvPAD_NAMELIST_on */
+	PadlistNAMES(padlist) = padname;
+	PadlistARRAY(padlist)[1] = pad;
+	PadlistMAX(padlist) = 3;
 	return padlist;
 }
 
 static void xsfunc_runfilter(pTHX_ CV *wrappersub)
 {
 	I32 gimme = GIMME_V;
-	AV *padlist = CvPADLIST(wrappersub);
-	CV *innersub = (CV*)*av_fetch(padlist, 2, 0);
-	CV *filtersub = (CV*)*av_fetch(padlist, 3, 0);
+	PADLIST *padlist = CvPADLIST(wrappersub);
+	CV *innersub = (CV*)PadlistARRAY(padlist)[2];
+	CV *filtersub = (CV*)PadlistARRAY(padlist)[3];
 	dMARK; dORIGMARK;
 	PUSHMARK(MARK);
 	CvXSUB(innersub)(aTHX_ innersub);
@@ -210,9 +234,9 @@ static void THX_swap_cvs(pTHX_ CV *a, CV *b)
 static void THX_apply_retfilter_to_xsub(pTHX_ CV *target, CV *filter)
 {
 	CV *wrapper = (CV*)newSV_type(SVt_PVCV);
-	AV *padlist = CvPADLIST(wrapper) = new_minimal_padlist();
-	av_store(padlist, 2, (SV*)wrapper);
-	av_store(padlist, 3, SvREFCNT_inc((SV*)filter));
+	PADLIST *padlist = CvPADLIST(wrapper) = new_padlist_for_filter();
+	PadlistARRAY(padlist)[2] = (PAD*)wrapper;
+	PadlistARRAY(padlist)[3] = (PAD*)SvREFCNT_inc((SV*)filter);
 	if(SvPOK(target))
 		sv_setpvn((SV*)wrapper, SvPVX(target), SvCUR(target));
 	if(SvOBJECT(target)) {

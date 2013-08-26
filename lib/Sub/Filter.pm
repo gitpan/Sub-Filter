@@ -78,7 +78,7 @@ use strict;
 
 use Carp qw(croak);
 
-our $VERSION = "0.003";
+our $VERSION = "0.004";
 
 my %SUB_EXPORT_OK = map { $_ => undef } qw(mutate_sub_filter_return);
 
@@ -90,9 +90,9 @@ sub import {
 			*{caller()."::".$_} = \&$_;
 		} elsif($_ eq "filter_return") {
 			require Attribute::Lexical;
-			Attribute::Lexical->VERSION(0.002);
+			Attribute::Lexical->VERSION(0.004);
 			require Sub::Mutate;
-			Sub::Mutate->VERSION(0.003);
+			Sub::Mutate->VERSION(0.005);
 			Attribute::Lexical->import("CODE:filter_return" =>
 				\&_handle_attr_filter_return);
 		} else {
@@ -196,7 +196,7 @@ Andrew Main (Zefram) <zefram@fysh.org>
 
 =head1 COPYRIGHT
 
-Copyright (C) 2009, 2010 Andrew Main (Zefram) <zefram@fysh.org>
+Copyright (C) 2009, 2010, 2013 Andrew Main (Zefram) <zefram@fysh.org>
 
 =head1 LICENSE
 

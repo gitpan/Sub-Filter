@@ -1,3 +1,25 @@
+version 0.004; 2013-08-26
+
+  * bugfix: require bugfixed version of Attribute::Lexical (for not
+    exposing [perl #73174] prior to Perl 5.11)
+
+  * bugfix: require bugfixed version of Sub::Mutate (for not crashing
+    in an edge case)
+
+  * update for Perl 5.15.3, where padlists are now AvREAL
+
+  * update for Perl 5.17.4's new pad API
+
+  * update for Perl 5.19.3's tracking of the last named item in a pad
+
+  * port to FreeBSD's mutant Perl 5.8 which has the defined-or operator
+
+  * include META.json in distribution
+
+  * convert .cvsignore to .gitignore
+
+  * add MYMETA.json to .gitignore
+
 version 0.003; 2010-11-21
 
   * bugfix: on Perl 5.13.3 and above, maintain CvSTASH backrefences
